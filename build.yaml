@@ -1,0 +1,103 @@
+name: Build Raspberry Pi 2 Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debootstrap qemu-user-static parted kpartx dosfstools zip
+
+      - name: Build Debian Image
+        run: |
+          sudo bash -c '
+          IMAGE_NAME="berry-router-rpi2.img"
+          IMAGE_SIZE_MB=3000
+
+          dd if=/dev/zero of=${IMAGE_NAME} bs=1M count=${IMAGE_SIZE_MB} status=progress
+
+          parted -s ${IMAGE_NAME} mklabel msdos
+          parted -s ${IMAGE_NAME} mkpart primary fat32 1MiB 256MiB
+          parted -s ${IMAGE_NAME} set 1 boot on
+          parted -s ${IMAGE_NAME} mkpart primary ext4 256MiB 100%
+
+          LOOP_DEV=$(losetup -fP --show ${IMAGE_NAME})
+          BOOT_DEV="${LOOP_DEV}p1"
+          ROOT_DEV="${LOOP_DEV}p2"
+
+          mkfs.vfat -F32 ${BOOT_DEV}
+          mkfs.ext4 -F ${ROOT_DEV}
+
+          MOUNT_DIR="/mnt/target"
+          mkdir -p ${MOUNT_DIR}
+          mount ${ROOT_DEV} ${MOUNT_DIR}
+          mkdir -p ${MOUNT_DIR}/boot
+          mount ${BOOT_DEV} ${MOUNT_DIR}/boot
+
+          debootstrap --arch=armhf --foreign bookworm ${MOUNT_DIR} http://deb.debian.org/debian/
+          cp /usr/bin/qemu-arm-static ${MOUNT_DIR}/usr/bin/
+
+          chroot ${MOUNT_DIR} /bin/bash -c "
+          /debootstrap/debootstrap --second-stage
+          echo \"deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware\" > /etc/apt/sources.list
+          apt-get update
+          apt-get install -y linux-image-armmp raspi-firmware ufw network-manager \
+              firmware-realtek firmware-atheros firmware-brcm80211 firmware-libertas \
+              usb-modeswitch iproute2 iptables python3 wireless-tools wpasupplicant traceroute iputils-ping curl
+
+          echo \"root:berry\" | chpasswd
+          useradd -m -s /bin/bash berry
+          echo \"berry:berry\" | chpasswd
+          usermod -aG sudo berry
+
+          echo \"net.ipv4.ip_forward=1\" >> /etc/sysctl.conf
+          echo \"net.ipv4.fib_multipath_hash_policy=1\" >> /etc/sysctl.conf
+          sed -i \"s/DEFAULT_FORWARD_POLICY=\\\"DROP\\\"/DEFAULT_FORWARD_POLICY=\\\"ACCEPT\\\"/g\" /etc/default/ufw
+          "
+
+          cp router_engine.py ${MOUNT_DIR}/usr/local/bin/router_engine.py
+          chmod +x ${MOUNT_DIR}/usr/local/bin/router_engine.py
+
+          cat <<EOFS > ${MOUNT_DIR}/etc/systemd/system/router-engine.service
+          [Unit]
+          Description=Dynamic Multi-WAN ECMP Engine
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          ExecStart=/usr/bin/python3 /usr/local/bin/router_engine.py
+          Restart=always
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target
+          EOFS
+
+          # Chroot systemd enable fix
+          mkdir -p ${MOUNT_DIR}/etc/systemd/system/multi-user.target.wants
+          ln -s /etc/systemd/system/router-engine.service ${MOUNT_DIR}/etc/systemd/system/multi-user.target.wants/router-engine.service
+
+          # Enable standard services via chroot systemctl preset/symlinks
+          chroot ${MOUNT_DIR} /bin/bash -c "systemctl enable NetworkManager ufw || true"
+
+          umount ${MOUNT_DIR}/boot
+          umount ${MOUNT_DIR}
+          losetup -d ${LOOP_DEV}
+          '
+
+      - name: Compress Image
+        run: zip berry-router-rpi2.zip berry-router-rpi2.img
+
+      - name: Upload Image Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: berry-router-rpi2-image
+          path: berry-router-rpi2.zip
