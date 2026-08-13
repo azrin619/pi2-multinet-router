@@ -1,0 +1,30 @@
+The default total size of the generated berry-mini-fog.img is 3,500 MB (~3.5 GB).
+Because it is created as a sparse file during the build, it takes up less actual disk space on your computer until it is written to physical hardware.
+📊 Image Size & Partition Breakdown
+| Partition | Size | Filesystem | Contents / Usage |
+|---|---|---|---|
+| Partition 1: BERRY_BOOT | 2,500 MB (~2.5 GB) | FAT32 | UEFI BOOTX64.EFI, GRUB, Kernel (vmlinuz), Initrd, and filesystem.squashfs (~1.2 GB used). |
+| Partition 2: persistence | 1,000 MB (~1.0 GB) | EXT4 | SSH host keys, authorized_keys, /etc/berry-router/wifi.conf, and local .deb driver cache. |
+| Total Virtual Image Size | 3,500 MB (~3.5 GB) | GPT Layout | Fits easily on any 4 GB or larger USB flash drive. |
+💾 Storage Footprint Explained
+ * On your Build Machine (Sparse File):
+   * Running ls -lh berry-mini-fog.img will report 3.5G.
+   * Running du -sh berry-mini-fog.img will show ~1.5G to 2.0G of actual disk space used on your drive, because empty blocks aren't saved to disk.
+ * When Flashed to a USB Drive (dd):
+   * Writing to a physical USB drive will write out the full 3.5 GB structure.
+⚙️ How to Change the Image Size
+If you want to shrink the image to fit on smaller 2 GB USB sticks or expand it for a larger 8 GB+ driver cache, edit the top of make_mini_live_img.sh:
+To shrink for a 2 GB USB Stick:
+IMG_SIZE_MB=2000      # Reduce total image to 2.0 GB
+
+# In Step 3 of the script, adjust the partition split:
+parted -s "$IMG_NAME" mkpart "BOOT" fat32 1MiB 1500MiB        # 1.5 GB Boot
+parted -s "$IMG_NAME" mkpart "persistence" ext4 1500MiB 100%   # ~500 MB Persistence
+
+To expand for an 8 GB USB Stick (with extra space for driver storage):
+IMG_SIZE_MB=8000      # Expand total image to 8.0 GB
+
+# In Step 3 of the script:
+parted -s "$IMG_NAME" mkpart "BOOT" fat32 1MiB 3000MiB        # 3.0 GB Boot
+parted -s "$IMG_NAME" mkpart "persistence" ext4 3000MiB 100%   # ~5.0 GB Persistence
+
