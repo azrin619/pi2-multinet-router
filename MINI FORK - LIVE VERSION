@@ -1,0 +1,38 @@
+Instead of generating an ISO that requires manual partitioning afterwards, this script creates a single, self-contained raw disk image (.img). It packs a bootable Live EFI system along with a pre-configured persistence partition baked right into the file—containing pre-generated SSH host keys, user authorized_keys, Wi-Fi configs, and the offline driver cache.
+​You can dd this single .img file straight to a USB stick or run it directly inside a virtual machine (QEMU/KVM/Proxmox) as a ready-to-run "Mini Fog" live appliance.
+​🏗️ Mini Fog Disk Layout (berry-mini-fog.img)
+
+berry-mini-fog.img (Raw Bootable Disk Image)
+├── Partition 1: EFI & Live OS (FAT32, ~2.5 GB)
+│   ├── EFI/BOOT/BOOTX64.EFI + grubx64.efi
+│   └── live/ (vmlinuz, initrd, filesystem.squashfs)
+│
+└── Partition 2: Pre-Baked Persistence (EXT4, ~1 GB)
+    ├── persistence.conf ("/ union")
+    ├── etc/
+    │   ├── ssh/ (Pre-generated SSH Host Keys)
+    │   └── berry-router/wifi.conf
+    ├── root/
+    │   └── .ssh/authorized_keys (Your SSH Public Keys)
+    └── var/cache/berry-router/drivers/ (Pre-cached drivers)
+
+
+📄 make_mini_live_img.sh
+​Save this script in your repository alongside make_deb.sh and make_uefi_secureboot_iso.sh:
+
+⚡ How to Run & Deploy
+​1. Build the All-In-One Image
+​Run the script as root or with sudo (required for loopback device mounting):
+
+qemu-system-x86_64 -enable-kvm -m 2048 -hda berry-mini-fog.img -bios /usr/share/OVMF/OVMF_CODE.fd
+
+sudo ./make_mini_live_img.sh
+
+2. Flash Directly to USB
+​Write the single .img directly to a target USB drive. The partition structure and pre-baked persistence partition are transferred immediately:
+
+sudo dd if=berry-mini-fog.img of=/dev/sdX status=progress bs=4M
+
+3. Quick Local Testing with QEMU
+​You can test the exact Live environment with full persistence without burning a physical USB:
+
