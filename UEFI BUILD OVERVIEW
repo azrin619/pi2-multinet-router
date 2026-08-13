@@ -1,0 +1,10 @@
+berry-uefi-iso/
+├── boot/
+│   └── grub/
+│       ├── efi.img          <-- EFI System Partition (x86_64-efi)
+│       └── grub.cfg         <-- UEFI GRUB Bootloader Menu
+├── EFI/
+│   └── BOOT/
+│       └── BOOTX64.EFI      <-- Main UEFI Executable
+├── live/
+│   └── filesystem.squashfs <-- Linux Root System + Berry Router Engine + Drivers
