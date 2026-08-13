@@ -1,3 +1,17 @@
+#################CHANGES 13082026:: 2020 SINGAPORE #################################
+### SUDO ers issue
+#   1. The Tray Widget Password Prompt Issue
+#   When the tray widget runs, clicking "🔄 Sync Routes Now" calls sudo systemctl restart router-engine. Because desktop apps run under a normal user account (not root), this silently fails in the background or hangs waiting for a password prompt that never appears.
+#
+#   Fix: Include a custom sudoers drop-in configuration file inside the .deb package so the local desktop user can trigger the restart without needing a password.
+#
+#   2. Missing IP Forwarding (Router/Gateway Mode)
+#   If you intend to use a Raspberry Pi or Linux Mint PC as an actual network router/gateway for other devices on your LAN, incoming traffic won't be forwarded across interfaces unless Linux kernel IP forwarding is enabled.
+#
+#   Fix: Add net.ipv4.ip_forward = 1 initialization into the engine startup sequence.
+#########################################################################################
+
+
 cat << 'EOF' > make_deb.sh
 #!/usr/bin/env bash
 # ===================================================================
@@ -10,15 +24,22 @@ PKG_NAME="berry-router-engine"
 PKG_VER="1.0.0"
 BUILD_DIR="${PKG_NAME}_${PKG_VER}_all"
 
+echo "📦 Checking build tools..."
+if ! command -v dpkg-deb &> /dev/null; then
+    echo "❌ Error: dpkg-deb is not installed. Run 'sudo apt install dpkg-dev' first."
+    exit 1
+fi
+
 echo "📦 Creating package directory structure..."
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}/DEBIAN"
 mkdir -p "${BUILD_DIR}/usr/local/bin"
 mkdir -p "${BUILD_DIR}/lib/systemd/system"
 mkdir -p "${BUILD_DIR}/etc/xdg/autostart"
+mkdir -p "${BUILD_DIR}/etc/sudoers.d"
 
 # -------------------------------------------------------------------
-# 1. CONTROL FILE (Dependencies & Package Metadata)
+# 1. CONTROL FILE
 # -------------------------------------------------------------------
 echo "📝 Writing DEBIAN/control file..."
 cat << CONTROL_EOF > "${BUILD_DIR}/DEBIAN/control"
@@ -27,7 +48,7 @@ Version: ${PKG_VER}
 Section: net
 Priority: optional
 Architecture: all
-Depends: python3, iproute2, iputils-ping, curl, systemd, python3-gi, gir1.2-gtk-3.0
+Depends: python3, iproute2, iputils-ping, curl, systemd, python3-gi, gir1.2-gtk-3.0, pkexec
 Maintainer: Berry Router Team <admin@localhost>
 Description: Multi-Cloud and Regional Routing Engine with Tray Indicator
  Dynamic route optimizer for AWS, Azure, GCP, Aliyun, Oracle, and Telco
@@ -35,7 +56,7 @@ Description: Multi-Cloud and Regional Routing Engine with Tray Indicator
 CONTROL_EOF
 
 # -------------------------------------------------------------------
-# 2. ROUTER ENGINE BACKEND (router_engine.py)
+# 2. ROUTER ENGINE BACKEND
 # -------------------------------------------------------------------
 echo "⚙️ Writing /usr/local/bin/router_engine.py..."
 cat << 'PY_ENGINE' > "${BUILD_DIR}/usr/local/bin/router_engine.py"
@@ -67,6 +88,10 @@ CLOUD_REGIONS = {
 }
 
 M365_API_URL = "https://endpoints.office.com/endpoints/worldwide?clientrequestid=b10c5ed1-bad1-445f-b386-b919946339a7"
+
+def enable_ip_forwarding():
+    """Enables packet forwarding for router functionality."""
+    subprocess.run(["sysctl", "-w", "net.ipv4.ip_forward=1"], capture_output=True)
 
 def get_active_gateways():
     res = subprocess.run(["ip", "-j", "route", "show"], capture_output=True, text=True)
@@ -141,6 +166,7 @@ def optimize_regional_routes(gateways):
 
 def main():
     print("=== Universal Multi-Cloud Router Engine Active ===")
+    enable_ip_forwarding()
     while True:
         try:
             gateways = get_active_gateways()
@@ -156,7 +182,7 @@ if __name__ == "__main__":
 PY_ENGINE
 
 # -------------------------------------------------------------------
-# 3. TRAY WIDGET FRONTEND (mint_router_tray.py)
+# 3. TRAY WIDGET FRONTEND
 # -------------------------------------------------------------------
 echo "🖥️ Writing /usr/local/bin/mint_router_tray.py..."
 cat << 'PY_TRAY' > "${BUILD_DIR}/usr/local/bin/mint_router_tray.py"
@@ -293,7 +319,8 @@ class RouterTrayApp:
         threading.Thread(target=self.run_service_restart, daemon=True).start()
 
     def run_service_restart(self):
-        subprocess.run(["sudo", "systemctl", "restart", "router-engine"])
+        # Uses passwordless sudo rule installed via sudoers.d/berry-router
+        subprocess.run(["sudo", "/bin/systemctl", "restart", "router-engine"])
         time.sleep(2)
         self.update_data()
 
@@ -339,12 +366,21 @@ X-GNOME-Autostart-enabled=true
 AUTOSTART_EOF
 
 # -------------------------------------------------------------------
-# 6. POST-INSTALLATION & PRE-REMOVAL SCRIPTS
+# 6. SUDOERS POLICY (Allows passwordless tray sync)
 # -------------------------------------------------------------------
-echo "📜 Writing install trigger hooks (postinst & prerm)..."
+echo "🔐 Writing sudoers rule..."
+cat << 'SUDO_EOF' > "${BUILD_DIR}/etc/sudoers.d/berry-router"
+ALL ALL=(ALL) NOPASSWD: /bin/systemctl restart router-engine
+SUDO_EOF
+
+# -------------------------------------------------------------------
+# 7. HOOKS & PERMISSIONS
+# -------------------------------------------------------------------
+echo "📜 Writing install trigger hooks..."
 cat << 'POSTINST' > "${BUILD_DIR}/DEBIAN/postinst"
 #!/bin/sh
 set -e
+chmod 0440 /etc/sudoers.d/berry-router
 systemctl daemon-reload
 systemctl enable router-engine.service
 systemctl restart router-engine.service || true
@@ -363,13 +399,13 @@ chmod +x "${BUILD_DIR}/usr/local/bin/router_engine.py"
 chmod +x "${BUILD_DIR}/usr/local/bin/mint_router_tray.py"
 
 # -------------------------------------------------------------------
-# 7. BUILD DEB PACKAGE
+# 8. BUILD DEB PACKAGE
 # -------------------------------------------------------------------
 echo "🔨 Building .deb package..."
 dpkg-deb --build "${BUILD_DIR}"
 
 echo ""
 echo "==================================================================="
-echo "🎉 SUCCESS! File created: ${BUILD_DIR}.deb"
+echo "🎉 SUCCESS! Built package: ${BUILD_DIR}.deb"
 echo "==================================================================="
 EOF
