@@ -1,0 +1,15 @@
+# RUN INSTALLER SCRIPT (make sure its CHMOD +X)
+sudo bash install_router_engine.sh
+
+#Verify live route changes and latency measurements:
+sudo journalctl -u router-engine -f
+
+#Inspect kernel routes applied to your network cards:
+ip route show
+
+#If you prefer a stateless cron job that fires periodically rather than running a persistent service:
+# # Edit root crontab
+## sudo crontab -e
+
+# Run the route optimizer every 30 minutes
+## */30 * * * * /usr/bin/python3 /usr/local/bin/router_engine.py > /dev/null 2>&1
