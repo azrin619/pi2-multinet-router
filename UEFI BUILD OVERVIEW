@@ -8,3 +8,42 @@ berry-uefi-iso/
 │       └── BOOTX64.EFI      <-- Main UEFI Executable
 ├── live/
 │   └── filesystem.squashfs <-- Linux Root System + Berry Router Engine + Drivers
+
+
+
+ Key Features of the UEFI ISO Builder
+​Pure x86_64 UEFI Support: Includes standard 64-bit EFI binaries (BOOTX64.EFI) so modern PCs (like Dell Latitude 7370/7480 and modern UEFI-only motherboards) can detect and boot the USB drive.
+​Predictable Interface Naming: Uses net.ifnames=0 biosdevname=0 boot options in GRUB so physical LAN ports reliably default to eth0 and wlan0, preserving your .88 IP assignment logic.
+​Run-from-RAM Option (toram): Allows running the entire router engine in RAM so you can unplug the bootable USB flash drive once booted.
+​🛠️ Updated Repository Structure
+​Your repository now provides both .deb package installation and pure UEFI USB creation:
+
+pi2-multinet-router/
+├── .gitignore
+├── LICENSE
+├── README.md
+├── make_deb.sh              <-- Builds standalone .deb package
+├── make_uefi_iso.sh         <-- Builds UEFI-bootable USB Live ISO
+├── src/
+│   ├── router_engine.py
+│   ├── mint_router_tray.py
+│   ├── berry_bootstrap_ip88.py
+│   └── berry_driver_loader.py
+└── system/
+    ├── router-engine.service
+    ├── berry-eth0-bootstrap.service
+    ├── berry-wifi-auto.service
+    └── berry-driver-loader.service
+
+
+📌 Usage Instructions
+​To build the UEFI bootable ISO image directly on your build host:
+
+# 1. Make the script executable
+chmod +x make_uefi_iso.sh
+
+# 2. Build the UEFI ISO
+./make_uefi_iso.sh
+
+# 3. Flash to a USB drive (replace /dev/sdX with your USB drive name)
+sudo dd if=berry-router-uefi-1.2.0-x86_64.iso of=/dev/sdX status=progress bs=4M
