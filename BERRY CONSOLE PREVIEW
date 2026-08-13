@@ -1,0 +1,61 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🍓 BERRY ROUTER OS | Mini Fork Appliance                      👤 root  │  ⚙️ Settings  │ 🔔 0  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│  📊 SYSTEM OVERVIEW                                                                             │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────── │
+│  Host Name:       berry-router-live             Uptime:      0d 02h 14m                          │
+│  Kernel:          Linux 6.8.0-generic           CPUs:        4x Intel(R) Core(TM) i5            │
+│  Memory Usage:    412 MB / 2048 MB (20%)        Storage:     850 MB / 1000 MB (Overlay EXT4)    │
+│                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│  🌐 NETWORK INTERFACES & STATIC IP ASSIGNER (berry_bootstrap_ip88.py)                            │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────── │
+│  Interface  Type        DHCP IP            Static IP (.88)       MAC Address        Status       │
+│  ─────────  ──────────  ─────────────────  ────────────────────  ─────────────────  ───────────  │
+│  eth0       Ethernet    192.168.1.105/24   192.168.1.88/24 🟢    00:1A:2B:3C:4D:5E  CONNECTED    │
+│  wlan0      Wireless    10.0.0.45/24       --                    A4:C3:F0:12:34:56  CONNECTED    │
+│                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│  📡 WI-FI AUTO-BIND STATUS (berry_wifi_autobind.sh)                                              │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────── │
+│  Active Interface:  wlan0                                                                        │
+│  SSID:              MyRouterNetwork                                                              │
+│  Signal Strength:   ████████░░ -62 dBm (Good)                                                    │
+│  Security:          WPA2-PSK (AES)                                                               │
+│  Config Path:       /etc/wpa_supplicant/wpa_supplicant.conf (Permissions: 0600 🔒)               │
+│                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│  ⚡ MULTI-CLOUD ROUTING ENGINE (router_engine.py)                                                 │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────── │
+│  Current Default Route:   eth0 (via 192.168.1.1)                                                 │
+│  Engine Hysteresis:       15.0 ms threshold                                                      │
+│                                                                                                  │
+│  Latency Probes (Parallel ICMP):                                                                 │
+│  ├── 🌐 1.1.1.1 (Cloudflare) ───►  eth0: 12.4 ms 🟢  │  wlan0: 28.1 ms                              │
+│  ├── 🌐 8.8.8.8 (Google DNS) ───►  eth0: 18.2 ms 🟢  │  wlan0: 34.5 ms                              │
+│  └── 🌐 9.9.9.9 (Quad9) ───────►  eth0: 15.1 ms 🟢  │  wlan0: 31.0 ms                              │
+│                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│  🔌 HOTPLUG USB DRIVER AUTO-LOADER (berry_driver_loader.py)                                      │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────── │
+│  Driver Cache Directory: /var/cache/berry-router/drivers/                                        │
+│  Loaded Drivers:                                                                                 │
+│  ├── rtl8812au-kmod_5.2.20_amd64.deb [Auto-installed via USB mount /media/usb1] 🟢                │
+│  └── iwlwifi-firmware_20230515_all.deb [Built-in Package] 🟢                                     │
+│                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│  ⚙️ SYSTEMD SERVICES STATUS                                                                       │
+│  ─────────────────────────────────────────────────────────────────────────────────────────────── │
+│  🟢 berry-eth0-bootstrap.service  (Active - Dynamic Subnet .88 Assigner)                         │
+│  🟢 berry-wifi-auto.service        (Active - Wi-Fi Hotplug Auto-Binder)                          │
+│  🟢 berry-driver-loader.service    (Active - USB Driver Auto-Installer)                           │
+│  🟢 router-engine.service          (Active - Multi-Cloud ECMP Engine)                            │
+│  🟢 ssh.service                    (Active - SSH Server / Port 22)                               │
+│                                                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
