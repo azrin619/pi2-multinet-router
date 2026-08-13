@@ -1,0 +1,12 @@
+pi2-multinet-router/
+├── .gitignore
+├── LICENSE
+├── README.md
+├── make_deb.sh                  <-- Automated DEB Builder Script
+├── src/
+│   ├── router_engine.py         <-- Backend Python Optimizer
+│   └── mint_router_tray.py      <-- Desktop GTK Tray Widget
+└── system/
+    ├── router-engine.service    <-- Systemd Unit
+    ├── router-tray.desktop      <-- XDG Autostart File
+    └── berry-router.sudoers     <-- Nopasswd Sudo Policy for Tray Sync
