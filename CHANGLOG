@@ -1,0 +1,29 @@
+#################CHANGES 13082026:: 2020 SINGAPORE #################################
+### SUDO ers issue
+#   1. The Tray Widget Password Prompt Issue
+#   When the tray widget runs, clicking "🔄 Sync Routes Now" calls sudo systemctl restart router-engine. Because desktop apps run under a normal user account (not root), this silently fails in the background or hangs waiting for a password prompt that never appears.
+#
+#   Fix: Include a custom sudoers drop-in configuration file inside the .deb package so the local desktop user can trigger the restart without needing a password.
+#
+#   2. Missing IP Forwarding (Router/Gateway Mode)
+#   If you intend to use a Raspberry Pi or Linux Mint PC as an actual network router/gateway for other devices on your LAN, incoming traffic won't be forwarded across interfaces unless Linux kernel IP forwarding is enabled.
+#
+#   Fix: Add net.ipv4.ip_forward = 1 initialization into the engine startup sequence.
+#########################################################################################
+
+## added some extra features
+To ensure your system works out-of-the-box across broad hardware—from consumer motherboards (ASUS, MSI, ASRock, Intel) to laptops (Dell Latitude 7370, 7480, Acer, ASUS Vivo)—the package can be expanded with pre-bundled firmware dependencies and an Automated Driver Caching & Hotplug USB Loader.
+​🛠️ Key Additions Included in the Build
+​Pre-Bundled Broad Vendor Drivers & Firmware:
+​Intel Ethernet & Wi-Fi: firmware-iwlwifi covers Intel Wireless AC 7265, 8260, 8265 (Dell Latitude 7370 / 7480) and Intel Gigabit/10G Ethernet NICs (I217, I218, I219, e1000e).
+​Realtek Ethernet & Wi-Fi: firmware-realtek covers RTL8111/8168/8411 PCIe Gigabit LAN found on ASUS, MSI, ASRock, Acer, and Vivo boards.
+​Broadcom & Atheros: firmware-misc-nonfree / firmware-atheros covers extra legacy and mobile network hardware.
+​Automated USB Hotplug Driver Scanner & Cache Daemon:
+​A background worker (berry-driver-loader.service) monitors connected PCI/USB hardware via udevadm and lspci.
+​When a USB flash drive containing driver packages (.deb) is inserted, the loader automatically detects missing driver modules, installs them onto the system, and saves them to a local cache at /var/cache/berry-router/drivers/.
+​📄 Updated make_deb.sh with Integrated Driver Caching
+​Replace your make_deb.sh with this updated script to include all network drivers and the offline USB auto-installer:
+💡 How the USB Driver Hotplug Workflow Works
+​USB Driver Injection: If you plug in a USB flash drive containing .deb driver files (e.g., custom Realtek or Broadcom driver packages), the background service automatically detects them.
+​Auto-Installation: The system runs dpkg -i on the .deb files from the USB drive without needing command-line intervention.
+​Local Caching: The installed .deb packages are cached locally in /var/cache/berry-router/drivers/ so they remain available even if the USB drive is removed.
