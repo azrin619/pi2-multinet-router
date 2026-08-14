@@ -27,3 +27,6 @@ To ensure your system works out-of-the-box across broad hardware—from consumer
 ​USB Driver Injection: If you plug in a USB flash drive containing .deb driver files (e.g., custom Realtek or Broadcom driver packages), the background service automatically detects them.
 ​Auto-Installation: The system runs dpkg -i on the .deb files from the USB drive without needing command-line intervention.
 ​Local Caching: The installed .deb packages are cached locally in /var/cache/berry-router/drivers/ so they remain available even if the USB drive is removed.
+
+### DEB VERSION is version 1.2
+Fixed some security flaws .
