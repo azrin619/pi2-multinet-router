@@ -42,3 +42,31 @@ APIPA / No IP Fallback (169.254.x.x or Disconnected): If no DHCP lease is obtain
 📄 Automated Patch Update Script (src/berry_patch_updater.sh)
 This script can be triggered manually, via cron, or through a systemd timer. It fetches the latest Git updates, rebuilds the package, applies hotfixes, and restarts active router daemons without requiring a full re-flash.
 
+
+
+🛠️ How to Add the Updater to System Services
+You can add a systemd timer to check for patches every 6 hours automatically by adding these two files to your build system:
+
+1. /etc/systemd/system/berry-patch-updater.service
+Ini, TOML
+[Unit]
+Description=Berry Router Git Patch & Hotfix Updater
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/berry_patch_updater.sh
+2. /etc/systemd/system/berry-patch-updater.timer
+Ini, TOML
+[Unit]
+Description=Run Berry Router Patch Check Every 6 Hours
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=6h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
+================================14AUG26
