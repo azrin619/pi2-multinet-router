@@ -1,2 +1,4 @@
 create uefi version.   done
 create live-disk
+
+Create an auto Changelog and PATCH so systems built on this image gets secure patches.
