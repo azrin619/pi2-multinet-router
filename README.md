@@ -78,3 +78,33 @@ Changes to Ver 1.2.0
 Old laptops automatically go to sleep when closed. The Linux live system is configured to ignore the lid switch, but ensure you disable "Suspend on Lid Close" if you install it permanently to internal storage.
 2. **Battery as a Built-in UPS:**
 An old laptop makes a *fantastic* router appliance because its worn-out battery acts as an integrated **Uninterruptible Power Supply (UPS)** during power outages!
+
+
+=============================================NOOB INSTRUCTIONS=================
+🛠️ How to Add the Updater to System Services
+You can add a systemd timer to check for patches every 6 hours automatically by adding these two files to your build system:
+
+1. /etc/systemd/system/berry-patch-updater.service
+Ini, TOML
+[Unit]
+Description=Berry Router Git Patch & Hotfix Updater
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/berry_patch_updater.sh
+2. /etc/systemd/system/berry-patch-updater.timer
+Ini, TOML
+[Unit]
+Description=Run Berry Router Patch Check Every 6 Hours
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=6h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+=====================END NOOB INSTRUCTIONS FOR VERSION 1.2===============
+
+
