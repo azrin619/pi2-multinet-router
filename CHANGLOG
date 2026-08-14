@@ -30,3 +30,15 @@ To ensure your system works out-of-the-box across broad hardware—from consumer
 
 ### DEB VERSION is version 1.2
 Fixed some security flaws .
+
+🛠️ Updated Static IP Assigner (src/berry_bootstrap_ip88.py)
+🌟 New Logic Rules:
+Public IP Check: If eth0 receives a Public IP from the ONT/ISP gateway, it skips binding the .88 address to avoid exposing the management port directly to the public internet.
+
+Private IP Check: If eth0 is on a Private IP (192.168.x.x, 10.x.x.x, 172.16-31.x.x), it proceeds with calculating and binding the .88 host address.
+
+APIPA / No IP Fallback (169.254.x.x or Disconnected): If no DHCP lease is obtained, or an invalid APIPA IP is assigned, it auto-assigns 10.10.88.88/24 to a secondary interface (or eth0 directly) to allow direct cross-over cable administration.
+
+📄 Automated Patch Update Script (src/berry_patch_updater.sh)
+This script can be triggered manually, via cron, or through a systemd timer. It fetches the latest Git updates, rebuilds the package, applies hotfixes, and restarts active router daemons without requiring a full re-flash.
+
